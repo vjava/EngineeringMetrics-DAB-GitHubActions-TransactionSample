@@ -82,12 +82,12 @@ jobs:
       ###########################################################
 
       - name: Bundle Validate
-        working-directory: bundle
+        working-directory: .
         run: |
           databricks bundle validate
 
       - name: Bundle Deploy
-        working-directory: bundle
+        working-directory: .
         run: |
           databricks bundle deploy
 
