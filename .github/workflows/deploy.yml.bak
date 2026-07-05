@@ -1,0 +1,27 @@
+name: Deploy
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_workspace_url: ${{ secrets.TF_VAR_workspace_url }}
+      TF_VAR_token: ${{ secrets.TF_VAR_token }}
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+        working-directory: terraform
+      - run: terraform validate
+        working-directory: terraform
+      - run: terraform apply -auto-approve
+        working-directory: terraform
+      - run: pip install databricks-cli
+      - run: databricks bundle validate
+        working-directory: bundle
+      - run: databricks bundle deploy
+        working-directory: bundle

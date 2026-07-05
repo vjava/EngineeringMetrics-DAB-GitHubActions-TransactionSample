@@ -1,27 +1,103 @@
-name: Deploy
+name: Deploy Engineering Metrics
+
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
+
   deploy:
+
     runs-on: ubuntu-latest
+
     env:
       TF_VAR_workspace_url: ${{ secrets.TF_VAR_workspace_url }}
       TF_VAR_token: ${{ secrets.TF_VAR_token }}
+
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-      - run: terraform init
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      ###########################################################
+      # Terraform
+      ###########################################################
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.0
+
+      - name: Terraform Init
         working-directory: terraform
-      - run: terraform validate
+        run: terraform init
+
+      - name: Terraform Format Check
         working-directory: terraform
-      - run: terraform apply -auto-approve
+        run: terraform fmt -recursive -check
+
+      - name: Terraform Validate
         working-directory: terraform
-      - run: pip install databricks-cli
-      - run: databricks bundle validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+
+      ###########################################################
+      # Install NEW Databricks CLI
+      ###########################################################
+
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      - name: Verify Databricks CLI
+        run: |
+          databricks version
+
+      ###########################################################
+      # Authentication
+      ###########################################################
+
+      - name: Verify Databricks Authentication
+        run: |
+          databricks current-user me
+
+      ###########################################################
+      # Databricks Asset Bundle
+      ###########################################################
+
+      - name: Bundle Validate
         working-directory: bundle
-      - run: databricks bundle deploy
+        run: |
+          databricks bundle validate
+
+      - name: Bundle Deploy
         working-directory: bundle
+        run: |
+          databricks bundle deploy
+
+      ###########################################################
+      # Deployment Summary
+      ###########################################################
+
+      - name: Deployment Completed
+        run: |
+          echo "======================================="
+          echo "Terraform Deployment Completed"
+          echo "Databricks Bundle Deployment Completed"
+          echo "======================================="
