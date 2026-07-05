@@ -1,0 +1,14 @@
+bundle:
+  name: engineering-metrics
+
+workspace:
+  root_path: /Workspace/Shared/EngineeringMetrics
+
+resources:
+  jobs:
+    transaction_job:
+      name: transaction-job
+      tasks:
+        - task_key: transaction
+          notebook_task:
+            notebook_path: ../src/notebooks/transaction_pipeline.py
